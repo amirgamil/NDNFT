@@ -1,0 +1,11 @@
+node_modules
+.env
+coverage
+coverage.json
+typechain
+assets
+*.DS_Store
+
+#Hardhat files
+cache
+artifacts
