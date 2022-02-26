@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -13,7 +12,7 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     Counters.Counter private _tokenIds;
 
     constructor() ERC721("SimpleNFT", "NFT") {
-        initialMints();
+        _initialMints();
     }
 
     function mintNFT(address to, string memory tokenURI)
@@ -33,7 +32,7 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     }
 
     //@notice in order for NDNFT to work, we MUST store the tokenURIs as data URLs on-chain
-    function initialMints() internal {
+    function _initialMints() internal {
         mintNFT(
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
             string(

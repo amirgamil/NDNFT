@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache License 2.0
 /*
  * @dev, I, Amir, ported this library to Solidity v0.8.0 very hackily, so there may be some things that are broken!
  * @title String & slice utility library for Solidity contracts.
