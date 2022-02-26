@@ -18,6 +18,7 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
     function mintNFT(address to, string memory tokenURI)
         public
+        nonReentrant
         onlyOwner
         returns (uint256)
     {
@@ -31,7 +32,7 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         return newItemId;
     }
 
-    //@notice we store the tokenURIs as data URLs on-chain
+    //@notice in order for NDNFT to work, we MUST store the tokenURIs as data URLs on-chain
     function initialMints() internal {
         mintNFT(
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
