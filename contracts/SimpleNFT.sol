@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./Base64.sol";
 
 //@notice simple NFT contract to demonstrate NFT composition
 contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
@@ -37,11 +38,16 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
             string(
                 abi.encodePacked(
-                    "{"
-                    '"description": "Astonished emoji.",'
-                    '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/astonished.svg",'
-                    '"name": "Astonished"'
-                    "}"
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            "{"
+                            '"description": "Astonished emoji.",'
+                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/astonished.svg",'
+                            '"name": "Astonished"'
+                            "}"
+                        )
+                    )
                 )
             )
         );
@@ -50,11 +56,16 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
             string(
                 abi.encodePacked(
-                    "{"
-                    '"description": "Boss emoji.",'
-                    '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/boss.svg",'
-                    '"name": "Boss"'
-                    "}"
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            "{"
+                            '"description": "Boss emoji.",'
+                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/boss.svg",'
+                            '"name": "Boss"'
+                            "}"
+                        )
+                    )
                 )
             )
         );
@@ -63,11 +74,16 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
             string(
                 abi.encodePacked(
-                    "{"
-                    '"description": "Fire emoji.",'
-                    '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/fire.svg",'
-                    '"name": "Fire"'
-                    "}"
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            "{"
+                            '"description": "Fire emoji.",'
+                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/fire.svg",'
+                            '"name": "Fire"'
+                            "}"
+                        )
+                    )
                 )
             )
         );
@@ -76,11 +92,16 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
             string(
                 abi.encodePacked(
-                    "{"
-                    '"description": "Rocket emoji.",'
-                    '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/rocket.svg",'
-                    '"name": "Rocket"'
-                    "}"
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            "{"
+                            '"description": "Rocket emoji.",'
+                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/rocket.svg",'
+                            '"name": "Rocket"'
+                            "}"
+                        )
+                    )
                 )
             )
         );
@@ -89,11 +110,16 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
             string(
                 abi.encodePacked(
-                    "{"
-                    '"description": Smile emoji.",'
-                    '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/smile.svg",'
-                    '"name": "Smile"'
-                    "}"
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            "{"
+                            '"description": Smile emoji.",'
+                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/smile.svg",'
+                            '"name": "Smile"'
+                            "}"
+                        )
+                    )
                 )
             )
         );

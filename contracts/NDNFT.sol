@@ -5,69 +5,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./interfaces/IERC721Interface.sol";
 import "./StringsUtil.sol";
 import "./Base64.sol";
-
-//@notice any NFT which is used by NDNFT must implmenent the ERC721Meta and the ERC721 interface
-interface IERC721Contract {
-    //Standard ERC721 interface
-    event Transfer(
-        address indexed _from,
-        address indexed _to,
-        uint256 indexed _tokenId
-    );
-    event Approval(
-        address indexed _owner,
-        address indexed _approved,
-        uint256 indexed _tokenId
-    );
-    event ApprovalForAll(
-        address indexed _owner,
-        address indexed _operator,
-        bool _approved
-    );
-
-    function balanceOf(address _owner) external view returns (uint256);
-
-    function ownerOf(uint256 _tokenId) external view returns (address);
-
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        bytes calldata data
-    ) external payable;
-
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    ) external payable;
-
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    ) external payable;
-
-    function approve(address _approved, uint256 _tokenId) external payable;
-
-    function setApprovalForAll(address _operator, bool _approved) external;
-
-    function getApproved(uint256 _tokenId) external view returns (address);
-
-    function isApprovedForAll(address _owner, address _operator)
-        external
-        view
-        returns (bool);
-
-    //ERC721Metadata interface
-    function name() external view returns (string calldata _name);
-
-    function symbol() external view returns (string calldata _symbol);
-
-    function tokenURI(uint256 _tokenId) external view returns (string calldata);
-}
 
 contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     //@notice, a simple NFT is an NFT which can be composed with other NFTs
@@ -129,15 +69,18 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     using Base64 for *;
 
     Counters.Counter private _tokenIds;
+    //@notice, this is not required, it's just used to call the initialMints to test NDNFT is
+    //working.
+    address private _simpleNFTAddr;
 
-    // @notices,
-    constructor() ERC721("2D NFT", "NFT") {
-        _initialMints();
+    event MintedNDFT(string name);
+
+    constructor(address _simpleNFTAddress) ERC721("2D NFT", "NFT") {
+        _simpleNFTAddr = _simpleNFTAddress;
     }
 
     //@notice takes array of token ids, must be the owner of all child NFTs to
     //compose them
-    //TODO: remove onlyOwner
     function mintNDNFT(
         SimpleNFT[] memory childNFTs,
         address to,
@@ -159,7 +102,11 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
                 "Must own NFTs which you try to compose"
             );
 
-            string memory currTokenURI = nftContract.tokenURI(currNFT.tokenId);
+            //@notice we're assuming tokenURIs are stored as data-urls on-chain, so we need
+            //to decode it from the base64 format
+            string memory currTokenURI = string(
+                Base64.decode(nftContract.tokenURI(currNFT.tokenId))
+            );
 
             string memory nextSVGImage = _getSVGImage(currTokenURI);
             newNDImage = string(abi.encodePacked(newNDImage, nextSVGImage));
@@ -201,6 +148,8 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         );
 
         _setTokenURI(newItemId, newTokenURI);
+
+        emit MintedNDFT(name);
     }
 
     function _buildTokenURI(
@@ -279,7 +228,6 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     {
         StringsUtil.slice memory imgSlice = _getImageURIFromTokenURI(tokenURI);
         //@notice, check if this is a url or another svg (with a simple heuristic),
-        //TODO: fix for IPFS
         if (imgSlice.startsWith("http".toSlice())) {
             return
                 string(
@@ -290,8 +238,24 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
                     )
                 );
         }
-        return imgSlice.toString();
+        //we assume this is an encoded svg and decode it accordingly
+        return string(Base64.decode(imgSlice.toString()));
     }
 
-    function _initialMints() internal {}
+    //@notice, lil helper to help test the contract
+    //TODO: make this onlyOwner after test
+    function initialMints() external {
+        SimpleNFT[] memory firstNDNFT = new SimpleNFT[](3);
+        firstNDNFT[0] = SimpleNFT({tokenId: 1, contractAddr: _simpleNFTAddr});
+        firstNDNFT[1] = SimpleNFT({tokenId: 2, contractAddr: _simpleNFTAddr});
+        firstNDNFT[2] = SimpleNFT({tokenId: 3, contractAddr: _simpleNFTAddr});
+        firstNDNFT[3] = SimpleNFT({tokenId: 4, contractAddr: _simpleNFTAddr});
+        firstNDNFT[4] = SimpleNFT({tokenId: 5, contractAddr: _simpleNFTAddr});
+
+        mintNDNFT(
+            firstNDNFT,
+            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
+            "The first NDNFT :)"
+        );
+    }
 }
