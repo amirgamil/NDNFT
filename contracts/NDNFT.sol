@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./StringsUtil.sol";
+import "./Base64.sol";
 
 //@notice any NFT which is used by NDNFT must implmenent the ERC721Meta and the ERC721 interface
 interface IERC721Contract {
@@ -125,6 +126,8 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
     using Counters for Counters.Counter;
     using StringsUtil for *;
+    using Base64 for *;
+
     Counters.Counter private _tokenIds;
 
     // @notices,
@@ -135,11 +138,11 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     //@notice takes array of token ids, must be the owner of all child NFTs to
     //compose them
     //TODO: remove onlyOwner
-    function mintNDNFT(SimpleNFT[] memory childNFTs, address to)
-        public
-        nonReentrant
-        onlyOwner
-    {
+    function mintNDNFT(
+        SimpleNFT[] memory childNFTs,
+        address to,
+        string memory name
+    ) public nonReentrant onlyOwner {
         string memory newNDImage;
         string memory attributes;
         bytes32[] memory childHashes = new bytes32[](childNFTs.length);
@@ -156,20 +159,12 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
                 "Must own NFTs which you try to compose"
             );
 
-            //TODO: force rendered HTML to not include Javascript
-            //@notice, there is probably a risk of an attacker deploying a harmful ERC721 contract that returns
-            //some kind of harmful URL to inject into the page (where page = HTML that gets renderered as
-            //the tokenURI of the new NDNFT). But as long as you the minter trust the contract addresses you
-            //provide this probably wouldn't be a problem. Also, since the attacker would not be able to take
-            //advantage of the contract or harm users by sending the NFT any more than you could normally do
-            //by sending a harmful page that executes arbitrary Javascript.
             string memory currTokenURI = nftContract.tokenURI(currNFT.tokenId);
 
-            string memory imageURI = _getImageURIFromTokenURI(currTokenURI);
-            newNDImage = string(
-                abi.encodePacked(newNDImage, "<img src='", imageURI, "' />")
-            );
-            //@dev we attach the data-urls for every NFT that is appended in the new one
+            string memory nextSVGImage = _getSVGImage(currTokenURI);
+            newNDImage = string(abi.encodePacked(newNDImage, nextSVGImage));
+
+            //@dev we attach the data-urls for every NFT that is appended
             attributes = string(
                 abi.encodePacked(
                     attributes,
@@ -187,6 +182,11 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         uint256 newItemId = _tokenIds.current();
 
         //@notice copy over the child NFTs into storage
+        //@dev, this is a little bit of trick that allows us to initialize an array in a struct. This
+        //is the only way (to my knowledge) to make this work, we have to tell the EVM to first reserve
+        //space for a dynamic array, then individually push each element. If we try to assign a storage
+        //pointer ahead of time, the compiler will complain. If we try to copy over the childHashes memory
+        //array, the compiler will also complain.
         tokenIDMap[newItemId] = NDNFTStorage({children: new bytes32[](0)});
         for (uint256 i = 0; i < childHashes.length; i++) {
             tokenIDMap[newItemId].children.push(childHashes[i]);
@@ -194,18 +194,39 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
         _safeMint(to, newItemId);
 
-        //TODO: need to base encode the image and fix placeholder
-        string memory newTokenURI = string(
-            abi.encodePacked(
-                "{ 'attributes': [",
-                attributes,
-                "], 'description': 'placeholder', 'image': '",
-                newNDImage,
-                "', 'name': 'placeholder'"
-            )
+        string memory newTokenURI = _buildTokenURI(
+            attributes,
+            newNDImage,
+            name
         );
 
         _setTokenURI(newItemId, newTokenURI);
+    }
+
+    function _buildTokenURI(
+        string memory attributes,
+        string memory newNDImage,
+        string memory name
+    ) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            abi.encodePacked(
+                                "{ 'attributes': [",
+                                attributes,
+                                "], 'description': 'An NDNFT.', 'image': 'data:image/svg+xml;base64,",
+                                Base64.encode(bytes(newNDImage)),
+                                "', 'name': '",
+                                name,
+                                "'"
+                            )
+                        )
+                    )
+                )
+            );
     }
 
     function _getAndStoreSimpleHash(SimpleNFT memory simpleNFT)
@@ -230,7 +251,7 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     function _getImageURIFromTokenURI(string memory tokenURI)
         internal
         pure
-        returns (string memory)
+        returns (StringsUtil.slice memory)
     {
         StringsUtil.slice memory slice = tokenURI.toSlice();
         StringsUtil.slice memory prefixToRemove = "image"
@@ -248,7 +269,28 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         //which is the end of the image url
         imageSlice.find(quote).beyond(quote).split(quote, imageURL);
 
-        return imageURL.toString();
+        return imageURL;
+    }
+
+    function _getSVGImage(string memory tokenURI)
+        internal
+        pure
+        returns (string memory)
+    {
+        StringsUtil.slice memory imgSlice = _getImageURIFromTokenURI(tokenURI);
+        //@notice, check if this is a url or another svg (with a simple heuristic),
+        //TODO: fix for IPFS
+        if (imgSlice.startsWith("http".toSlice())) {
+            return
+                string(
+                    abi.encodePacked(
+                        "<image href='",
+                        imgSlice.toString(),
+                        "' />"
+                    )
+                );
+        }
+        return imgSlice.toString();
     }
 
     function _initialMints() internal {}
