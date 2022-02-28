@@ -6,9 +6,15 @@ This project is an experiment at higher-dimensional NFTs. It allows you to mint 
 
 `SimpleNFT` is a standard ERC721 token that stores all images and metadata via on-chain data-urls. I minted a couple of NFTs, which can be found [here](https://testnets.opensea.io/collection/simplenft-ppwmeffc36).
 
+<img width="1506" alt="Screen Shot 2022-02-28 at 10 11 36 AM" src="https://user-images.githubusercontent.com/7995105/156035677-6e43a2dc-2bb6-4588-bd1d-bf67f8f57e87.png">
+
+
 To test `NDNFT`, I deployed the contract and called `initialMints` which mints 4 of these squares. Note, the only thing we do when we mint an `NDNFT` is pass an array of each NFT's `tokenId` and `contractAddr`, that's it! The contract will do all of the necessary work to construct and extract the new image (assuming it's in the correct format, see `Caveats` section).
 
 The result of `initialMints` is [this](https://testnets.opensea.io/assets/0x88b5ac48b0a3be35e788d3846d91d5b94e55664b/1) NFT, which was dynamically constructed at mint-time.
+
+<img width="1506" alt="Screen Shot 2022-02-28 at 10 12 05 AM" src="https://user-images.githubusercontent.com/7995105/156035742-e9663072-7fa4-459c-9de4-80257b9da08f.png">
+
 
 And here is the encoded `tokenURI` of this `NDNFT`
 
@@ -18,7 +24,14 @@ data:application/json;base64,eyJuZG5mdCI6IHsiYXR0cmlidXRlcyI6IFt7InRyYWl0X3R5cGU
 
 If you paste this in a browser, you'll see we have this.
 
+<img width="1512" alt="Screen Shot 2022-02-28 at 10 04 42 AM" src="https://user-images.githubusercontent.com/7995105/156035757-120900fd-d538-469f-907d-fb8874667ac6.png">
+
+
 And we can copy paste the image to see that indeed, the image is a combination of the four NFTs.
+
+<img width="1512" alt="Screen Shot 2022-02-28 at 10 05 48 AM" src="https://user-images.githubusercontent.com/7995105/156035797-0960004a-2a7c-4372-9564-fffadbcdb280.png">
+
+
 
 Note, OpenSea only shows 3 because it's cutting the image off since we did not specify a height and width for our svg image in the `NDNFT`, this is easily fixable by computing the dynamic height and width when we construct the data-URL.
 
