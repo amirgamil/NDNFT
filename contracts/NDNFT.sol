@@ -97,11 +97,10 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
             IERC721Contract nftContract = IERC721Contract(currNFT.contractAddr);
 
-            //TODO
-            // require(
-            //     nftContract.ownerOf(currNFT.tokenId) == msg.sender,
-            //     "Must own NFTs which you try to compose"
-            // );
+            require(
+                nftContract.ownerOf(currNFT.tokenId) == msg.sender,
+                "Must own NFTs which you try to compose"
+            );
 
             //@notice we're assuming tokenURIs are stored as data-urls on-chain, so we need
             //to decode it from the base64 format

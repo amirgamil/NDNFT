@@ -2,9 +2,27 @@
 
 This project is an experiment at higher-dimensional NFTs. It allows you to mint an NFT of `n` (for `n=1,2,3... etc.`) other NFTs. The "higher-dimensional" NFT (which I call an `NDNFT`) **dynamically generates the image on-chain at mint-time from the other individual NFTs.**
 
-### How it works
+### Example
 
-In
+`SimpleNFT` is a standard ERC721 token that stores all images and metadata via on-chain data-urls. I minted a couple of NFTs, which can be found [here](https://testnets.opensea.io/collection/simplenft-ppwmeffc36).
+
+To test `NDNFT`, I deployed the contract and called `initialMints` which mints 4 of these squares. Note, the only thing we do when we mint an `NDNFT` is pass an array of each NFT's `tokenId` and `contractAddr`, that's it! The contract will do all of the necessary work to construct and extract the new image (assuming it's in the correct format, see `Caveats` section).
+
+The result of `initialMints` is [this](https://testnets.opensea.io/assets/0x88b5ac48b0a3be35e788d3846d91d5b94e55664b/1) NFT, which was dynamically constructed at mint-time.
+
+And here is the encoded `tokenURI` of this `NDNFT`
+
+```
+data:application/json;base64,eyJuZG5mdCI6IHsiYXR0cmlidXRlcyI6IFt7InRyYWl0X3R5cGUiOiAiTkZUICMxIiwgInZhbHVlIjogeyJkZXNjcmlwdGlvbiI6ICJBIGJsdWUgc3F1YXJlLiIsImltYWdlIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaVBqeHlaV04wSUhkcFpIUm9QU0k0TUNJZ2FHVnBaMmgwUFNJNE1DSWdjM1I1YkdVOUltWnBiR3c2Y21kaUtESXpMREV3Tnl3eU16a3BJaTgrUEM5emRtYysiLCAibmFtZSI6ICJCbHVlIGZyaWVuZC4ifX0seyJ0cmFpdF90eXBlIjogIk5GVCAjMiIsICJ2YWx1ZSI6IHsiZGVzY3JpcHRpb24iOiAiQSByZWQgc3F1YXJlLiIsImltYWdlIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaVBqeHlaV04wSUhkcFpIUm9QU0k0TUNJZ2FHVnBaMmgwUFNJNE1DSWdjM1I1YkdVOUltWnBiR3c2Y21kaUtESTFOU3cyTWl3ME9Da2lMejQ4TDNOMlp6ND0iLCAibmFtZSI6ICJSZWQgZnJpZW5kLiJ9fSx7InRyYWl0X3R5cGUiOiAiTkZUICMzIiwgInZhbHVlIjogeyJkZXNjcmlwdGlvbiI6ICJBIHllbGxvdyBzcXVhcmUuIiwiaW1hZ2UiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpUGp4eVpXTjBJSGRwWkhSb1BTSTRNQ0lnYUdWcFoyaDBQU0k0TUNJZ2MzUjViR1U5SW1acGJHdzZjbWRpS0RJek1Dd2dNakF6TENBNE55a2lMejQ4TDNOMlp6ND0iLCAibmFtZSI6ICJZZWxsb3cgZnJpZW5kLiJ9fSx7InRyYWl0X3R5cGUiOiAiTkZUICM0IiwgInZhbHVlIjogeyJkZXNjcmlwdGlvbiI6ICJBIGdyZWVuIHNxdWFyZS4iLCJpbWFnZSI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lQanh5WldOMElIZHBaSFJvUFNJNE1DSWdhR1ZwWjJoMFBTSTRNQ0lnYzNSNWJHVTlJbVpwYkd3NmNtZGlLREl6TERFMU5pdzRNaWtpTHo0OEwzTjJaejQ9IiwgIm5hbWUiOiAiR3JlZW4gZnJpZW5kLiJ9fV0gfSwgImRlc2NyaXB0aW9uIjogIkFuIE5ETkZULiIsICJpbWFnZSI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lQanhuSUhSeVlXNXpabTl5YlQwbmRISmhibk5zWVhSbEtEQXBKejQ4YzNabklIaHRiRzV6UFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eU1EQXdMM04yWnlJK1BISmxZM1FnZDJsa2RHZzlJamd3SWlCb1pXbG5hSFE5SWpnd0lpQnpkSGxzWlQwaVptbHNiRHB5WjJJb01qTXNNVEEzTERJek9Ta2lMejQ4TDNOMlp6NDhMMmMrUEdjZ2RISmhibk5tYjNKdFBTZDBjbUZ1YzJ4aGRHVW9NVEF3S1NjK1BITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lQanh5WldOMElIZHBaSFJvUFNJNE1DSWdhR1ZwWjJoMFBTSTRNQ0lnYzNSNWJHVTlJbVpwYkd3NmNtZGlLREkxTlN3Mk1pdzBPQ2tpTHo0OEwzTjJaejQ4TDJjK1BHY2dkSEpoYm5ObWIzSnRQU2QwY21GdWMyeGhkR1VvTWpBd0tTYytQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpUGp4eVpXTjBJSGRwWkhSb1BTSTRNQ0lnYUdWcFoyaDBQU0k0TUNJZ2MzUjViR1U5SW1acGJHdzZjbWRpS0RJek1Dd2dNakF6TENBNE55a2lMejQ4TDNOMlp6NDhMMmMrUEdjZ2RISmhibk5tYjNKdFBTZDBjbUZ1YzJ4aGRHVW9NekF3S1NjK1BITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lQanh5WldOMElIZHBaSFJvUFNJNE1DSWdhR1ZwWjJoMFBTSTRNQ0lnYzNSNWJHVTlJbVpwYkd3NmNtZGlLREl6TERFMU5pdzRNaWtpTHo0OEwzTjJaejQ4TDJjK1BDOXpkbWMrIiwgIm5hbWUiOiAiVGhlIGZpcnN0IE5ETkZUIDopIn0=
+```
+
+If you paste this in a browser, you'll see we have this.
+
+And we can copy paste the image to see that indeed, the image is a combination of the four NFTs.
+
+Note, OpenSea only shows 3 because it's cutting the image off since we did not specify a height and width for our svg image in the `NDNFT`, this is easily fixable by computing the dynamic height and width when we construct the data-URL.
+
+The cool thing is that we essentially created an NFT by composing other NFTs entirely on-chain, i.e. a higher-dimensional NFT!
 
 ### How it's built
 
