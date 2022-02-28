@@ -12,7 +12,10 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    constructor() ERC721("SimpleNFT", "NFT") {
+    address private _simpleNFTOwner;
+
+    constructor(address simpleNFTOwner) ERC721("SimpleNFT", "NFT") {
+        _simpleNFTOwner = simpleNFTOwner;
         _initialMints();
     }
 
@@ -32,20 +35,39 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         return newItemId;
     }
 
+    function _buildSVGRect(string memory color)
+        internal
+        returns (string memory)
+    {
+        return
+            string(
+                Base64.encode(
+                    abi.encodePacked(
+                        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" style="fill:',
+                        color,
+                        '"/></svg>'
+                    )
+                )
+            );
+    }
+
     //@notice in order for NDNFT to work, we MUST store the tokenURIs as data URLs on-chain
     function _initialMints() internal {
         mintNFT(
-            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
+            _simpleNFTOwner,
             string(
                 abi.encodePacked(
                     "data:application/json;base64,",
                     Base64.encode(
                         bytes(
-                            "{"
-                            '"description": "Astonished emoji.",'
-                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/astonished.svg",'
-                            '"name": "Astonished"'
-                            "}"
+                            abi.encodePacked(
+                                "{"
+                                '"description": "A blue square.",'
+                                '"image": "data:image/svg+xml;base64,',
+                                _buildSVGRect("rgb(23,107,239)"),
+                                '", "name": "Blue friend."'
+                                "}"
+                            )
                         )
                     )
                 )
@@ -53,17 +75,20 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         );
 
         mintNFT(
-            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
+            _simpleNFTOwner,
             string(
                 abi.encodePacked(
                     "data:application/json;base64,",
                     Base64.encode(
                         bytes(
-                            "{"
-                            '"description": "Boss emoji.",'
-                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/boss.svg",'
-                            '"name": "Boss"'
-                            "}"
+                            abi.encodePacked(
+                                "{"
+                                '"description": "A red square.",'
+                                '"image": "data:image/svg+xml;base64,',
+                                _buildSVGRect("rgb(255,62,48)"),
+                                '", "name": "Red friend."'
+                                "}"
+                            )
                         )
                     )
                 )
@@ -71,17 +96,20 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         );
 
         mintNFT(
-            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
+            _simpleNFTOwner,
             string(
                 abi.encodePacked(
                     "data:application/json;base64,",
                     Base64.encode(
                         bytes(
-                            "{"
-                            '"description": "Fire emoji.",'
-                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/fire.svg",'
-                            '"name": "Fire"'
-                            "}"
+                            abi.encodePacked(
+                                "{"
+                                '"description": "A yellow square.",'
+                                '"image": "data:image/svg+xml;base64,',
+                                _buildSVGRect("rgb(230, 203, 87)"),
+                                '", "name": "Yellow friend."'
+                                "}"
+                            )
                         )
                     )
                 )
@@ -89,35 +117,20 @@ contract SimpleNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         );
 
         mintNFT(
-            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
+            _simpleNFTOwner,
             string(
                 abi.encodePacked(
                     "data:application/json;base64,",
                     Base64.encode(
                         bytes(
-                            "{"
-                            '"description": "Rocket emoji.",'
-                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/rocket.svg",'
-                            '"name": "Rocket"'
-                            "}"
-                        )
-                    )
-                )
-            )
-        );
-
-        mintNFT(
-            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
-            string(
-                abi.encodePacked(
-                    "data:application/json;base64,",
-                    Base64.encode(
-                        bytes(
-                            "{"
-                            '"description": Smile emoji.",'
-                            '"image": "https://gateway.pinata.cloud/ipfs/QmQiWAoVMAaHuJcBH5WECBNXnRoXtZUFtSkfMDP6rEkaPc/smile.svg",'
-                            '"name": "Smile"'
-                            "}"
+                            abi.encodePacked(
+                                "{"
+                                '"description": "A green square.",'
+                                '"image": "data:image/svg+xml;base64,',
+                                _buildSVGRect("rgb(23,156,82)"),
+                                '", "name": "Green friend."'
+                                "}"
+                            )
                         )
                     )
                 )

@@ -48,7 +48,7 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         The tl;dr reason for this is that you cannot create new storage variables/arrays inside method calls, 
         only create storage pointers. So if you want to declare something to storage, you have to point it 
         to a pre-existing pointer that was declared outside the method. This needs to happen at "every layer of
-        complex datatype you store", so line 79 is not enough.
+        complex datatype (struct, array, mapping) you store", so line 79 is not enough.
 
         The slightly longer reason for this is that storage for a given contract is essentially allocated as a 
         very large array. The EVM will allocate the storage for the contract inside a given array before any 
@@ -73,7 +73,7 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
     //working.
     address private _simpleNFTAddr;
 
-    event MintedNDFT(string name);
+    event MintedNDFT(string name, uint256 tokenId);
 
     constructor(address _simpleNFTAddress) ERC721("2D NFT", "NFT") {
         _simpleNFTAddr = _simpleNFTAddress;
@@ -81,11 +81,11 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
     //@notice takes array of token ids, must be the owner of all child NFTs to
     //compose them
-    function mintNDNFT(
-        SimpleNFT[] memory childNFTs,
-        address to,
-        string memory name
-    ) public nonReentrant onlyOwner {
+    function mintNDNFT(SimpleNFT[] memory childNFTs, string memory name)
+        public
+        nonReentrant
+        returns (uint256)
+    {
         string memory newNDImage;
         string memory attributes;
         bytes32[] memory childHashes = new bytes32[](childNFTs.length);
@@ -97,31 +97,46 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
             IERC721Contract nftContract = IERC721Contract(currNFT.contractAddr);
 
-            require(
-                nftContract.ownerOf(currNFT.tokenId) == msg.sender,
-                "Must own NFTs which you try to compose"
-            );
+            //TODO
+            // require(
+            //     nftContract.ownerOf(currNFT.tokenId) == msg.sender,
+            //     "Must own NFTs which you try to compose"
+            // );
 
             //@notice we're assuming tokenURIs are stored as data-urls on-chain, so we need
             //to decode it from the base64 format
             string memory currTokenURI = string(
-                Base64.decode(nftContract.tokenURI(currNFT.tokenId))
-            );
-
-            string memory nextSVGImage = _getSVGImage(currTokenURI);
-            newNDImage = string(abi.encodePacked(newNDImage, nextSVGImage));
-
-            //@dev we attach the data-urls for every NFT that is appended
-            attributes = string(
-                abi.encodePacked(
-                    attributes,
-                    "{'trait_type': 'NFT #}",
-                    i + 1,
-                    "', 'value': '",
-                    currTokenURI,
-                    "'},"
+                Base64.decode(
+                    _getBaseEncoding(nftContract.tokenURI(currNFT.tokenId))
                 )
             );
+            string memory nextSVGImage = _getSVGImage(currTokenURI, i);
+            newNDImage = string(abi.encodePacked(newNDImage, nextSVGImage));
+
+            //@dev we attach the data-urls for every NFT that is appended in the metadata
+            if (i < childNFTs.length - 1) {
+                attributes = string(
+                    abi.encodePacked(
+                        attributes,
+                        '{"trait_type": "NFT #',
+                        Strings.toString(i + 1),
+                        '", "value": ',
+                        currTokenURI,
+                        "},"
+                    )
+                );
+            } else {
+                attributes = string(
+                    abi.encodePacked(
+                        attributes,
+                        '{"trait_type": "NFT #',
+                        Strings.toString(i + 1),
+                        '", "value": ',
+                        currTokenURI,
+                        "}"
+                    )
+                );
+            }
         }
 
         _tokenIds.increment();
@@ -139,8 +154,7 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             tokenIDMap[newItemId].children.push(childHashes[i]);
         }
 
-        _safeMint(to, newItemId);
-
+        _safeMint(msg.sender, newItemId);
         string memory newTokenURI = _buildTokenURI(
             attributes,
             newNDImage,
@@ -149,7 +163,9 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
 
         _setTokenURI(newItemId, newTokenURI);
 
-        emit MintedNDFT(name);
+        emit MintedNDFT(name, newItemId);
+
+        return newItemId;
     }
 
     function _buildTokenURI(
@@ -164,13 +180,13 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
                     Base64.encode(
                         bytes(
                             abi.encodePacked(
-                                "{ 'attributes': [",
+                                '{"ndnft": {"attributes": [',
                                 attributes,
-                                "], 'description': 'An NDNFT.', 'image': 'data:image/svg+xml;base64,",
-                                Base64.encode(bytes(newNDImage)),
-                                "', 'name': '",
+                                '] }, "description": "An NDNFT.", "image": "data:image/svg+xml;base64,',
+                                Base64.encode(_buildSVGImage(newNDImage)),
+                                '", "name": "',
                                 name,
-                                "'"
+                                '"}'
                             )
                         )
                     )
@@ -178,6 +194,25 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
             );
     }
 
+    //builds the svg image from the child NFTs it is composing
+    function _buildSVGImage(string memory newNDImage)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return
+            bytes(
+                abi.encodePacked(
+                    // solhint-disable-next-line
+                    '<svg xmlns="http://www.w3.org/2000/svg">',
+                    newNDImage,
+                    "</svg>"
+                )
+            );
+    }
+
+    //computes the hash of (tokenId, contractAddr) of a simpleNFT and stores it in
+    //the map if it's already not there
     function _getAndStoreSimpleHash(SimpleNFT memory simpleNFT)
         internal
         returns (bytes32)
@@ -221,41 +256,69 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         return imageURL;
     }
 
-    function _getSVGImage(string memory tokenURI)
+    //given a token URI (which needs to be an on-chain data-url), extracts and returns an svg
+    //of the NFT
+    function _getSVGImage(string memory tokenURI, uint256 index)
         internal
         pure
         returns (string memory)
     {
         StringsUtil.slice memory imgSlice = _getImageURIFromTokenURI(tokenURI);
         //@notice, check if this is a url or another svg (with a simple heuristic),
+        //we transform the images so that they're next to each other and not on top of each other.
+        //For simplicity, we just assume a fixed max width, but this could be fetched dynamically from the
+        //tokenURI if that information is there
         if (imgSlice.startsWith("http".toSlice())) {
             return
                 string(
                     abi.encodePacked(
-                        "<image href='",
+                        "<g transform='translate(",
+                        Strings.toString(index * 100),
+                        ")'><image href='",
                         imgSlice.toString(),
-                        "' />"
+                        "' /></g>"
                     )
                 );
         }
         //we assume this is an encoded svg and decode it accordingly
-        return string(Base64.decode(imgSlice.toString()));
+        StringsUtil.slice memory svgSlice = "data:image/svg+xml;base64,"
+            .toSlice();
+        return
+            string(
+                abi.encodePacked(
+                    "<g transform='translate(",
+                    Strings.toString(index * 100),
+                    ")'>",
+                    string(
+                        Base64.decode(
+                            imgSlice.find(svgSlice).beyond(svgSlice).toString()
+                        )
+                    ),
+                    "</g>"
+                )
+            );
+    }
+
+    //need to remove the prefixed `data:application/json;base64` from tokenURIs that are stored for
+    //the browser so we can decode it into the JSON result we need
+    function _getBaseEncoding(string memory dataURL)
+        internal
+        pure
+        returns (string memory)
+    {
+        StringsUtil.slice memory slice = "data:application/json;base64,"
+            .toSlice();
+        return dataURL.toSlice().find(slice).beyond(slice).toString();
     }
 
     //@notice, lil helper to help test the contract
-    //TODO: make this onlyOwner after test
-    function initialMints() external {
-        SimpleNFT[] memory firstNDNFT = new SimpleNFT[](3);
+    function initialMints() external onlyOwner {
+        SimpleNFT[] memory firstNDNFT = new SimpleNFT[](4);
         firstNDNFT[0] = SimpleNFT({tokenId: 1, contractAddr: _simpleNFTAddr});
         firstNDNFT[1] = SimpleNFT({tokenId: 2, contractAddr: _simpleNFTAddr});
         firstNDNFT[2] = SimpleNFT({tokenId: 3, contractAddr: _simpleNFTAddr});
         firstNDNFT[3] = SimpleNFT({tokenId: 4, contractAddr: _simpleNFTAddr});
-        firstNDNFT[4] = SimpleNFT({tokenId: 5, contractAddr: _simpleNFTAddr});
 
-        mintNDNFT(
-            firstNDNFT,
-            0x926B47C42Ce6BC92242c080CF8fAFEd34a164017,
-            "The first NDNFT :)"
-        );
+        mintNDNFT(firstNDNFT, "The first NDNFT :)");
     }
 }

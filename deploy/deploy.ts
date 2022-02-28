@@ -1,6 +1,9 @@
+import * as dotenv from "dotenv";
 import { DeployFunction } from "hardhat-deploy/dist/types";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import { utils } from "ethers";
+
+dotenv.config();
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
@@ -11,6 +14,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     console.log("Deploying contracts...");
     const simpleNFT = await deploy("SimpleNFT", {
         from: deployer,
+        args: [utils.getAddress(`${process.env.ADDRESS}`)],
         log: true,
     });
     console.log("SimpleNFT deployed to ", simpleNFT.address);
