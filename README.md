@@ -50,6 +50,8 @@ This method will then fetch the tokenURIs of each NFT and use/parse out the data
 
 To make this work, all NFTs that you want to be composed **have to be stored as data-URLs on-chain** (as base64 JSON encoded metadata). This is necessary because we have to be able to directly extract the image and since we're doing this all on-chain, we need the raw data. We can't resolve a URL that is some VPS/Server hosting the metadata directly in the EVM (at least without either some independent client/frontend that does some work or via an oracle).
 
+Also, if you store images behind some hosted URL in your NFT, the `NDNFT` will still generate the correct image if you paste the raw image in the browser, but it won't show the images natively in OpenSea, e.g. will look like [this](https://testnets.opensea.io/assets/0x5de69f86cafc08ca9552658e84f9a4bbb8952ac9/2). The reason for this is because OpenSea blocks any requests made for safety (i.e. to avoid executing arbitrary Javascript), but the construction still works!
+
 ### Stack
 
 Smart contracts are written in Solidity, with forge for testing, and Hardhat for deployments. I use the Apache 2.0 Licensed [solidity-stringutils](https://github.com/Arachnid/solidity-stringutils) (which I ported to `solidity 8.0` with a couple of small, hacky changes, it may not be fully stable!) library for extracting the images from the NFTs and the [base64](https://github.com/Brechtpd/base64) library for encoding/decoding all data-URLs stored on-chain.

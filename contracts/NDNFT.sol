@@ -79,7 +79,7 @@ contract NDNFT is ERC721URIStorage, ReentrancyGuard, Ownable {
         _simpleNFTAddr = _simpleNFTAddress;
     }
 
-    //@notice takes array of token ids, must be the owner of all child NFTs to
+    //@notice takes array of simple NFTs, must be the owner of all child NFTs to
     //compose them
     function mintNDNFT(SimpleNFT[] memory childNFTs, string memory name)
         public
